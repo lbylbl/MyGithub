@@ -1,0 +1,47 @@
+    def  depositchannelList={
+        def dbismp =  new groovy.sql.Sql(dataSource_ismp)
+        def boCustomerServiceInstance = BoCustomerService.get(params.id)
+
+        //老渠道B2C列表
+        def b2clistSql = """select t.id,t.acquire_indexc,t.bankid,t.acquire_name,t.channel_desc
+                          from gwchannel  t
+                          where t.acquire_indexc not like '%-%'
+                            and t.channel_type ='1'
+                            and t.bank_type='1'
+                            and t.channel_sts=0
+                            and t.payment_mode='0'"""
+        def b2cchannellist =  dbismp.rows(b2clistSql)
+
+
+
+
+         //连连B2C借记渠道列表
+         def b2clistD = """select t.id,t.acquire_indexc,t.bankid,t.acquire_name,t.channel_desc
+                          from gwchannel  t
+                          where t.acquire_indexc like '%_BCL'"""
+
+         def b2cchannellistBc =  dbismp.rows(b2clistD)
+
+
+        def unionPaylist = """select distinct t.CHANNEL_DESC
+                                  from gwchannel  t
+                                  where t.acquire_name like '银联%' order by t.CHANNEL_DESC"""
+        def unionchannellist =  dbismp.rows(unionPaylist)
+
+        //小网关B2C渠道列表借记
+        def unionPay_B2C_list = """select t.id,t.acquire_indexc,t.bankid,t.acquire_name,t.channel_desc,t.ACQUIRE_CODE
+                                  from gwchannel  t
+                                  where t.channel_type ='1'
+                                  and t.bank_type='1'
+                                  and t.payment_mode='0'
+                                  and t.channel_sts=0
+                                  and t.acquire_name like '银联%' order by t.CHANNEL_DESC"""
+        def unionchannellistB2C =  dbismp.rows(unionPay_B2C_list)
+
+        //小网关B2C渠道列表借记
+
+         //查询该客户开通的支付渠道
+         def cmChannelList = CmCustomerChannel.findAllByCustomer(CmCustomer.get(boCustomerServiceInstance.customerId));
+
+         [b2cchannellist:b2cchannellist,cmChannelList:cmChannelList,b2cchannellistBc:b2cchannellistBc,unionchannellistB2C:unionchannellistB2C,unionchannellist:unionchannellist]
+    }
